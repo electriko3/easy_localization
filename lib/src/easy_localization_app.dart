@@ -165,22 +165,32 @@ class _EasyLocalizationState extends State<EasyLocalization> {
   }
 
   Locale _getZhLocale(Locale _osLocale) {
-    final zhSupportedList = widget.supportedLocales.takeWhile((locale) => locale.languageCode == 'zh').toList();
+    final zhSupportedList = <Locale>[];
+    widget.supportedLocales.forEach((element) {
+      if (element.languageCode == 'zh') {
+        zhSupportedList.add(element);
+      }
+    });
     if (zhSupportedList.isEmpty) {
       return _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale);
     }
-    if (_osLocale.scriptCode != null && zhSupportedList.takeWhile((locale) => locale.scriptCode != null).isNotEmpty) {
-      return zhSupportedList.takeWhile((locale) => locale.scriptCode != null).firstWhere(
-            (locale) => _osLocale.scriptCode == locale.scriptCode,
-            orElse: () => _getZHLocaleByContryCode(_osLocale, zhSupportedList),
-          );
+    if (_osLocale.scriptCode != null && zhSupportedList.any((element) => element.scriptCode != null)) {
+      return zhSupportedList.firstWhere(
+        (locale) => _osLocale.scriptCode == locale.scriptCode,
+        orElse: () => _getZHLocaleByContryCode(_osLocale, zhSupportedList),
+      );
     } else {
       return _getZHLocaleByContryCode(_osLocale, zhSupportedList);
     }
   }
 
   Locale _getZHLocaleByContryCode(Locale _osLocale, List<Locale> zhSupportedList) {
-    final zhSupportedCountryCodeList = zhSupportedList.takeWhile((locale) => locale.countryCode != null).toList();
+    final zhSupportedCountryCodeList = <Locale>[];
+    zhSupportedList.forEach((element) {
+      if (element.countryCode != null) {
+        zhSupportedCountryCodeList.add(element);
+      }
+    });
     if (zhSupportedCountryCodeList.isEmpty) {
       return _getZHLocaleByLang(_osLocale, zhSupportedList);
     }
