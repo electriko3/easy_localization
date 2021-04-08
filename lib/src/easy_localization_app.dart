@@ -165,7 +165,7 @@ class _EasyLocalizationState extends State<EasyLocalization> {
   }
 
   Locale _getZhLocale(Locale _osLocale) {
-    List<Locale> zhSupportedList = widget.supportedLocales.takeWhile((locale) => locale.languageCode == 'zh');
+    final zhSupportedList = widget.supportedLocales.takeWhile((locale) => locale.languageCode == 'zh');
     if (zhSupportedList.isEmpty) {
       return _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale);
     }
@@ -179,8 +179,8 @@ class _EasyLocalizationState extends State<EasyLocalization> {
     }
   }
 
-  Locale _getZHLocaleByContryCode(Locale _osLocale, List<Locale> zhSupportedList) {
-    List<Locale> zhSupportedCountryCodeList = zhSupportedList.takeWhile((locale) => locale.countryCode != null);
+  Locale _getZHLocaleByContryCode(Locale _osLocale, Iterable<Locale> zhSupportedList) {
+    final zhSupportedCountryCodeList = zhSupportedList.takeWhile((locale) => locale.countryCode != null);
     if (zhSupportedCountryCodeList.isEmpty) {
       return _getZHLocaleByLang(_osLocale, zhSupportedList);
     }
