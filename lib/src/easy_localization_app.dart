@@ -190,7 +190,7 @@ class _EasyLocalizationState extends State<EasyLocalization> {
     );
   }
 
-  Locale _getZHLocaleByLang(Locale _osLocale, List<Locale> zhSupportedList) {
+  Locale _getZHLocaleByLang(Locale _osLocale, Iterable<Locale> zhSupportedList) {
     return zhSupportedList.firstWhere(
       (locale) => locale.languageCode == _osLocale.languageCode,
       orElse: () => _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale),
