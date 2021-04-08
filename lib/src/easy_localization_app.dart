@@ -12,8 +12,7 @@ import 'localization.dart';
 import 'translations.dart';
 
 //If web then import intl_browser else intl_standalone
-import 'package:intl/intl_standalone.dart'
-    if (dart.library.html) 'package:intl/intl_browser.dart';
+import 'package:intl/intl_standalone.dart' if (dart.library.html) 'package:intl/intl_browser.dart';
 
 part 'bloc/easy_localization_bloc.dart';
 part 'utils.dart';
@@ -101,8 +100,7 @@ class EasyLocalization extends StatefulWidget {
   @override
   _EasyLocalizationState createState() => _EasyLocalizationState();
 
-  static _EasyLocalizationProvider of(BuildContext context) =>
-      _EasyLocalizationProvider.of(context);
+  static _EasyLocalizationProvider of(BuildContext context) => _EasyLocalizationProvider.of(context);
 }
 
 class _EasyLocalizationState extends State<EasyLocalization> {
@@ -136,28 +134,25 @@ class _EasyLocalizationState extends State<EasyLocalization> {
     if (widget.saveLocale) _savedLocale = await loadSavedLocale();
     if (_savedLocale == null && widget.startLocale != null) {
       locale = _getFallbackLocale(widget.supportedLocales, widget.startLocale);
-      log('Start locale loaded ${locale.toString()}',
-          name: 'Easy Localization');
+      log('Start locale loaded ${locale.toString()}', name: 'Easy Localization');
     }
     // If saved locale then get
     else if (_savedLocale != null && widget.saveLocale) {
-      log('Saved locale loaded ${_savedLocale.toString()}',
-          name: 'Easy Localization');
+      log('Saved locale loaded ${_savedLocale.toString()}', name: 'Easy Localization');
       locale = _savedLocale;
     } else {
       // Get Device Locale
       _osLocale = await _getDeviceLocale();
-      locale = widget.supportedLocales.firstWhere(
-          (locale) => _checkInitLocale(locale, _osLocale),
-          orElse: () => _getFallbackLocale(
-              widget.supportedLocales, widget.fallbackLocale));
+      if (_osLocale.languageCode == 'zh') {
+        locale = _getZhLocale(_osLocale);
+      } else {
+        locale = widget.supportedLocales.firstWhere((locale) => _checkInitLocale(locale, _osLocale),
+            orElse: () => _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale));
+      }
     }
 
     bloc.onChange(Resource(
-        locale: locale,
-        assetLoader: widget.assetLoader,
-        path: widget.path,
-        useOnlyLangCode: widget.useOnlyLangCode));
+        locale: locale, assetLoader: widget.assetLoader, path: widget.path, useOnlyLangCode: widget.useOnlyLangCode));
   }
 
   bool _checkInitLocale(Locale locale, Locale _osLocale) {
@@ -169,9 +164,41 @@ class _EasyLocalizationState extends State<EasyLocalization> {
     }
   }
 
+  Locale _getZhLocale(Locale _osLocale) {
+    List<Locale> zhSupportedList = widget.supportedLocales.takeWhile((locale) => locale.languageCode == 'zh');
+    if (zhSupportedList.isEmpty) {
+      return _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale);
+    }
+    if (_osLocale.scriptCode != null && zhSupportedList.takeWhile((locale) => locale.scriptCode != null).isNotEmpty) {
+      return zhSupportedList.takeWhile((locale) => locale.scriptCode != null).firstWhere(
+            (locale) => _osLocale.scriptCode == locale.scriptCode,
+            orElse: () => _getZHLocaleByContryCode(_osLocale, zhSupportedList),
+          );
+    } else {
+      return _getZHLocaleByContryCode(_osLocale, zhSupportedList);
+    }
+  }
+
+  Locale _getZHLocaleByContryCode(Locale _osLocale, List<Locale> zhSupportedList) {
+    List<Locale> zhSupportedCountryCodeList = zhSupportedList.takeWhile((locale) => locale.countryCode != null);
+    if (zhSupportedCountryCodeList.isEmpty) {
+      return _getZHLocaleByLang(_osLocale, zhSupportedList);
+    }
+    return zhSupportedCountryCodeList.firstWhere(
+      (locale) => _osLocale.countryCode == locale.countryCode,
+      orElse: () => _getZHLocaleByLang(_osLocale, zhSupportedList),
+    );
+  }
+
+  Locale _getZHLocaleByLang(Locale _osLocale, List<Locale> zhSupportedList) {
+    return zhSupportedList.firstWhere(
+      (locale) => locale.languageCode == _osLocale.languageCode,
+      orElse: () => _getFallbackLocale(widget.supportedLocales, widget.fallbackLocale),
+    );
+  }
+
   //Get fallback Locale
-  Locale _getFallbackLocale(
-      List<Locale> supportedLocales, Locale fallbackLocale) {
+  Locale _getFallbackLocale(List<Locale> supportedLocales, Locale fallbackLocale) {
     //If fallbackLocale not set then return first from supportedLocales
     if (fallbackLocale != null) {
       return fallbackLocale;
@@ -204,9 +231,7 @@ class _EasyLocalizationState extends State<EasyLocalization> {
       child: StreamBuilder<Resource>(
           stream: bloc.outStream,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                !snapshot.hasData &&
-                !snapshot.hasError) {
+            if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && !snapshot.hasError) {
               returnWidget = widget.preloaderWidget;
             } else if (snapshot.hasData && !snapshot.hasError) {
               returnWidget = _EasyLocalizationProvider(
@@ -214,8 +239,7 @@ class _EasyLocalizationState extends State<EasyLocalization> {
                 snapshot.data.locale,
                 bloc: bloc,
                 delegate: _EasyLocalizationDelegate(
-                    translations: snapshot.data.translations,
-                    supportedLocales: widget.supportedLocales),
+                    translations: snapshot.data.translations, supportedLocales: widget.supportedLocales),
               );
             } else if (snapshot.hasError) {
               returnWidget = FutureErrorWidget(msg: snapshot.error);
@@ -254,8 +278,7 @@ class _EasyLocalizationProvider extends InheritedWidget {
 
   // _EasyLocalizationDelegate get delegate => parent.delegate;
 
-  _EasyLocalizationProvider(this.parent, this._locale,
-      {Key key, this.bloc, this.delegate})
+  _EasyLocalizationProvider(this.parent, this._locale, {Key key, this.bloc, this.delegate})
       : super(key: key, child: parent.child) {
     log('Init provider', name: 'Easy Localization');
   }
@@ -276,10 +299,7 @@ class _EasyLocalizationProvider extends InheritedWidget {
       log('Locale set ${locale.toString()}', name: 'Easy Localization');
 
       bloc.onChange(Resource(
-          locale: locale,
-          path: parent.path,
-          assetLoader: parent.assetLoader,
-          useOnlyLangCode: parent.useOnlyLangCode));
+          locale: locale, path: parent.path, assetLoader: parent.assetLoader, useOnlyLangCode: parent.useOnlyLangCode));
     }
   }
 
