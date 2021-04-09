@@ -185,16 +185,7 @@ class _EasyLocalizationState extends State<EasyLocalization> {
   }
 
   Locale _getZHLocaleByContryCode(Locale _osLocale, List<Locale> zhSupportedList) {
-    final zhSupportedCountryCodeList = <Locale>[];
-    zhSupportedList.forEach((element) {
-      if (element.countryCode != null) {
-        zhSupportedCountryCodeList.add(element);
-      }
-    });
-    if (zhSupportedCountryCodeList.isEmpty) {
-      return _getZHLocaleByLang(_osLocale, zhSupportedList);
-    }
-    return zhSupportedCountryCodeList.firstWhere(
+    return zhSupportedList.firstWhere(
       (locale) => _osLocale.countryCode == locale.countryCode,
       orElse: () => _getZHLocaleByLang(_osLocale, zhSupportedList),
     );
