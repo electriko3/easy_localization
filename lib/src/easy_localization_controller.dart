@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl_standalone.dart'
-    if (dart.library.html) 'package:intl/intl_browser.dart';
+import 'package:intl/intl_standalone.dart' if (dart.library.html) 'package:intl/intl_browser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'translations.dart';
@@ -47,16 +46,18 @@ class EasyLocalizationController extends ChangeNotifier {
       EasyLocalization.logger('Saved locale loaded ${_savedLocale.toString()}');
       _locale = _savedLocale!;
     } else {
-      // From Device Locale
-      _locale = supportedLocales.firstWhere(
-          (locale) => _checkInitLocale(locale, _deviceLocale),
-          orElse: () => _getFallbackLocale(supportedLocales, fallbackLocale));
+      if (_deviceLocale.languageCode == 'zh') {
+        _locale = _getZhLocale(_deviceLocale, supportedLocales);
+      } else {
+        // From Device Locale
+        _locale = supportedLocales.firstWhere((locale) => _checkInitLocale(locale, _deviceLocale),
+            orElse: () => _getFallbackLocale(supportedLocales, fallbackLocale));
+      }
     }
   }
 
   //Get fallback Locale
-  Locale _getFallbackLocale(
-      List<Locale> supportedLocales, Locale? fallbackLocale) {
+  Locale _getFallbackLocale(List<Locale> supportedLocales, Locale? fallbackLocale) {
     //If fallbackLocale not set then return first from supportedLocales
     if (fallbackLocale != null) {
       return fallbackLocale;
@@ -137,5 +138,39 @@ class EasyLocalizationController extends ChangeNotifier {
     EasyLocalization.logger('Reset locale to platform locale $_deviceLocale');
 
     await setLocale(_deviceLocale);
+  }
+
+  Locale _getZhLocale(Locale _osLocale, List<Locale> supportedLocales) {
+    final zhSupportedList = <Locale>[];
+    supportedLocales.forEach((element) {
+      if (element.languageCode == 'zh') {
+        zhSupportedList.add(element);
+      }
+    });
+    if (zhSupportedList.isEmpty) {
+      return _getFallbackLocale(supportedLocales, _fallbackLocale);
+    }
+    if (_osLocale.scriptCode != null && zhSupportedList.any((element) => element.scriptCode != null)) {
+      return zhSupportedList.firstWhere(
+        (locale) => _osLocale.scriptCode == locale.scriptCode,
+        orElse: () => _getZHLocaleByContryCode(_osLocale, zhSupportedList, supportedLocales),
+      );
+    } else {
+      return _getZHLocaleByContryCode(_osLocale, zhSupportedList, supportedLocales);
+    }
+  }
+
+  Locale _getZHLocaleByContryCode(Locale _osLocale, List<Locale> zhSupportedList, List<Locale> supportedLocales) {
+    return zhSupportedList.firstWhere(
+      (locale) => _osLocale.countryCode == locale.countryCode,
+      orElse: () => _getZHLocaleByLang(_osLocale, zhSupportedList, supportedLocales),
+    );
+  }
+
+  Locale _getZHLocaleByLang(Locale _osLocale, List<Locale> zhSupportedList, List<Locale> supportedLocales) {
+    return zhSupportedList.firstWhere(
+      (locale) => locale.languageCode == _osLocale.languageCode,
+      orElse: () => _getFallbackLocale(supportedLocales, _fallbackLocale),
+    );
   }
 }
